@@ -148,7 +148,7 @@ void trova_percorso(int radice){
 int main() {
 
 	//apro il file INPUT
-	//in.open("input.txt", ios::in);
+	in.open("input.txt", ios::in);
 	
     in >> N >> M;
 
@@ -193,12 +193,12 @@ int main() {
     
         
     //apro il file OUTPUT
-	//out.open("output.txt", ios::out);
+	out.open("output.txt", ios::out);
 	
 	//lancio la funzione
 	trova_percorso(0);
 		
-#if 1
+#if 0
 	for(int i=0; i<=maxId; i++){
 		cout<<"path_max["<<i<<"]: ";
     	cout<<path_max[i][0]<<" "<<path_max[i][1];
@@ -217,9 +217,8 @@ int main() {
 	int next;
 	
 	if(trovato){
-		
-
-		cout<<"nodo di inizio ciclo: "<<cicloStart<<endl;
+	
+		//cout<<"nodo di inizio ciclo: "<<cicloStart<<endl;
 		//inserisco il primo nodo del ciclo
 		path.push_back(cicloStart);
 		
