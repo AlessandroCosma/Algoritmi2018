@@ -148,7 +148,7 @@ void trova_percorso(int radice){
 int main() {
 
 	//apro il file INPUT
-	in.open("input.txt", ios::in);
+	//in.open("input.txt", ios::in);
 	
     in >> N >> M;
 
@@ -193,7 +193,7 @@ int main() {
     
         
     //apro il file OUTPUT
-	out.open("output.txt", ios::out);
+	//out.open("output.txt", ios::out);
 	
 	//lancio la funzione
 	trova_percorso(0);
