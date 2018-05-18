@@ -9,8 +9,7 @@ const int N_MAX = 1000000;
 
 int N;
 int p[N_MAX];
-vector<int> r;
-
+int r[N_MAX+1];
 
 //ritorna la posizione di num se è presente in v
 //ritorna -1 se non è presente
@@ -33,9 +32,17 @@ int main() {
     freopen("output.txt", "w", stdout);
 #endif
 
+    //leggo N
     scanf("%d", &N);
+
+    //leggo il vettore delle altezze
     for (int i = 0; i < N; i++)
         scanf("%d", &p[i]);
+
+    //inizializzo il vettore dei risultati a 0
+    for(int i=0; i<N; i++){
+            r[i]=0;
+        }
     
 #if 0
     printf("p=");
@@ -44,30 +51,37 @@ int main() {
     printf("\n");
 #endif    
 
+    //scorro il vettore delle altezze
     for(int i=0; i<N; i++){
 
         if(i == 0){
-            r.push_back(p[i]-1);
+            r[p[i]-1]+=1;
             continue;
         }
 
-        int posizione = trova(p[i], r);
-
-        if(posizione == -1){
-            r.push_back(p[i]-1);
-        }
-
+        //se NON c'è una freccia in r all altezza 'i' incremento il valore della posizione 'i' di 1
+        if(r[p[i]] == 0)
+            r[p[i]-1]+=1;
+        
+        //se c'è una freccia in r all altezza 'i' incremento il valore della posizione 'i-1' di 1
+        //deceremento il valore della posizione i di -1
         else{
-           r[posizione]=p[i]-1;
+            r[p[i]-1]+=1;
+            r[p[i]]-=1;
         }
-
     }
     
-    printf("%d",r.size());
+    int frecce = 0;
+    //sommo le frecce che ho salvato nelle celle i-esime del vettore r
+    for(int i=0; i<N; i++){
+        frecce+=r[i];
+    }
+
+    printf("%d",frecce);
 
 #if 0
     printf("r=");
-    for (int i = 0; i < r.size(); i++)
+    for (int i = 0; i < N; i++)
         printf("%d ", r[i]);
     printf("\n");
 #endif       
