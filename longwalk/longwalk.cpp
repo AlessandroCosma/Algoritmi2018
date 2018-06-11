@@ -1,266 +1,103 @@
-#include <iostream>
-#include <fstream>
-#include <string> 
-#include <cstdio>
-#include <vector>
-#include <algorithm>
-
-
-/*
-	
-
-new_vector.assign(old_vector.begin(),old_vector.end()); // Method 1
-new_vector = old_vector; // Method 2
-std::vector<int> newvector(oldvector);
-
-*/
+#include<cassert>
+#include<iostream>
+#include<vector>
 
 using namespace std;
-using std::vector;
 
-ifstream in("input.txt");
-ofstream out("output.txt");
+const int MAX_N = 100000;
+int n, m;
+vector<int> exiting[MAX_N+1], entering[MAX_N+1];
 
-
-vector<int> successori[100001];
-
-/* array di 3 elementi: [0] = lung. del percorso massimo che passa per quel nodo
-				    	[1] = nodo successivo in un percorso masssimo
-				   		[2] = colore nodo: 0->bianco, 1->grigio, 2->nero
-*/ 
-vector<int>path_max[100001];
-
-int occorrenze[100001];
-
-
-bool trovato=false;
-int cicloStart;
-int N,M, maxId=-1;
-
-
-
-void leggi_grafo(){
-	// lettura del grafo dall'input.txt
-	int u;
-	in >> u;
-	
-	occorrenze[u]=1;
-	if(u>maxId)
-		maxId=u;
-	
-	int prossimo_nodo;
-	in >> prossimo_nodo;
-	
-	occorrenze[prossimo_nodo]=1;
-	if(prossimo_nodo>maxId)
-		maxId=prossimo_nodo;
-	
-	successori[u].push_back(prossimo_nodo);
-}
-	
-	
-
-void trova_percorso(int radice){
-	
-	//se è nero allora ha già gli attributi settati
-	if(path_max[radice][2]==2)
-		return;
-	
-	//se grigio ho il ciclo
-	else if(path_max[radice][2]==1){
-		trovato=true;
-		cicloStart=radice;
-		return;
-	}
-	
-	//se bianco
-	else{
-		
-		//lo setto a grigio, cioè inizio a processarlo
-		path_max[radice][2]=1;
-		
-		//radice ha 0 successori
-		if(successori[radice].size() == 0){
-			path_max[radice][0]=0;
-			path_max[radice][1]=0;
-			//colore diventa subito nero
-			path_max[radice][2]=2;
-		}
-		
-		//radice ha 1 solo successore
-		else if(successori[radice].size() == 1){
-			
-			int successore = successori[radice][0];
-			
-			trova_percorso(successore);
-					
-			path_max[radice][0]=1+path_max[successore][0];
-			path_max[radice][1]=successore;
-			
-			path_max[radice][2]=2;
-			
-			if(trovato)
-				return;
-							
-
-		}
-		
-		//radice successori >= 2
-		else{
-			int successore;
-
-			for(int i=0; i<successori[radice].size(); i++){
-				
-				successore=successori[radice][i];
-				trova_percorso(successore);
-				
-				if(trovato)
-					break;				
-			}
-			
-										
-			int max=-1;
-			successore=radice;
-			int next;
-			for(int i=0; i<successori[radice].size(); i++){
-				
-				next=successori[radice][i];
-				int t = path_max[next][0];
-				
-				if(t>max){
-					max=t;
-					successore=next;
-				}
-			}
-			path_max[radice][0]=1+max;
-			path_max[radice][1]=successore;
-			path_max[radice][2]=2;
-			
-			if(trovato)
-				return;
-		
-		}
-	}
-
-}
-
+int node_in_pos[MAX_N+1], num_placed = 0;
+int max_length_path_starting_from_node[MAX_N+1], out_degree[MAX_N+1], removed[MAX_N+1];
+int posRW = 0, stack_of_sink_nodes[MAX_N];
 
 int main() {
-
-	//apro il file INPUT
-	//in.open("input.txt", ios::in);
-	
-    in >> N >> M;
-
-    // lettura grafo
-    for(int i = 0; i < M; i++)
-    	leggi_grafo();
-    	
-    //chiudo il file
-    //in.close();
+    cin >> n >> m;
     
+    for(int i = 0; i<m;i++) {
+        int tail, head;
+        cin >> tail >> head;
+        exiting[tail].push_back(head);
+        entering[head].push_back(tail);
+        out_degree[tail]++;
+    }  
+
+    for(int v = 1; v <= n; v++)
+        if(out_degree[v] == 0)
+          stack_of_sink_nodes[posRW++] = v;
+
+    while(posRW > 0) {
+        int s = stack_of_sink_nodes[--posRW];
+        node_in_pos[n-num_placed++] = s;
+        removed[s] = 1;
+        for( int v : entering[s] )
+            if(--out_degree[v] == 0)
+    	  stack_of_sink_nodes[posRW++] = v;
+    }
     /*
-    	aggiungo il nodo radice:
-    	ogni nodo del grafo originale viene raggiunto da un arco che parte da radice
-    	Id radice = 0
+    cerr << endl << "num nodes removed: " << num_placed << endl;
+    cerr << endl << "They where removed as sinks in the following order: " << num_placed << endl;
+    for(int i = 0; i < num_placed; i++)
+      cerr << node_in_pos[n-i] << " ";
+    cerr << endl;
     */
     
-    for(int i=1; i<=maxId; i++){
-    	if(occorrenze[i]==1)
-    		successori[0].push_back(i);
+    if(num_placed < n) {  // we are left with some nodes but no one of these is now a source -> there must be a cycle
+        cout << -1 << " "; // there must be a cycle, we now search for it ...
+        int visited[MAX_N + 1], nxt[MAX_N + 1];
+        for(int i = 1; i <= n; i++)  
+            visited[i] = 0; // no node visited yet
+        int v = 1; while( removed[v] )  v++;  // place the pebble in any unremoved v
+        while( !visited[v] ) {
+            //cerr << "visit node " << v << endl; 
+            visited[v] = 1;
+            for( int next : exiting[v] )
+                if( !removed[next] ) {
+                    nxt[v] = next;
+                    //cerr << "the pebble could move to " << next << endl;
+      	        }  
+            v = nxt[v];
+        }
+        int u = v; //we got back to an already visited node v, we flag it in u, and now go for another round ... 
+        int len = 0;
+        do {
+            len++;
+            v = nxt[v];
+        } while( v != u );
+        cout << len << endl;
+        // and again...
+        do { // and print the nodes one by one
+            cout << v << " "; // cout << v << " ";
+            v = nxt[v];
+        } while( v != u );
+        cout << endl;
     }
-    
-
-    // sort array ed eliminazione duplicati
-    for(int i = 1; i <= N; i++){
-    	std::sort( successori[i].begin(), successori[i].end() );
-    	successori[i].erase( std::unique( successori[i].begin(), successori[i].end() ), successori[i].end() );
+    else {
+        int max_so_far = 0, good_start, nxt[MAX_N +1];
+        for(int pos = n-1; pos >= 0; pos--) {
+            int node = node_in_pos[pos];
+            max_length_path_starting_from_node[node] = 1;
+            int best_future = 0;
+            for( int next : exiting[node] )
+                if(best_future < max_length_path_starting_from_node[next]) {
+                    best_future = max_length_path_starting_from_node[next];
+                    nxt[node]=next;
+                }   
+            max_length_path_starting_from_node[node] += best_future;
+            if(max_so_far < max_length_path_starting_from_node[node]) {
+                max_so_far = max_length_path_starting_from_node[node];
+                good_start = node;
+                // cerr << "max_length_path_starting_from_node[" << node << "] = " << max_length_path_starting_from_node[node] << endl;
+            }	 
+        }
+        cout << max_so_far << endl;  // max length of a path in the removed nodes
+        int v = good_start;  // good_start = the first node of a maximum length path
+        while( v ) {  // we print the nodes one by one
+            cout << v << " ";
+            v = nxt[v];   // nxt[] was properly set up during the dyn programming 
+        }
+        cout << endl;
     }
-    
-    //inizializzo l'array path_max
-    for(int i=0; i<=maxId; i++)
-    	for(int j=0; j<3; j++)
-    		path_max[i].push_back(0);
-    
-#if 0 
-    for(int u = 0; u <= maxId; u++){
-    	cout<<"Successore di "<<u<<":";
-    	for(int i = 0; i < successori[u].size(); i++)
-    		cout<<" "<<successori[u][i];
-    	cout<<endl;
-    }
-#endif      
-    
-        
-    //apro il file OUTPUT
-	//out.open("output.txt", ios::out);
-	
-	//lancio la funzione
-	trova_percorso(0);
-		
-#if 0
-	for(int i=0; i<=maxId; i++){
-		cout<<"path_max["<<i<<"]: ";
-    	cout<<path_max[i][0]<<" "<<path_max[i][1];
-    	cout<<endl;
-	}
-  
-    cout<<"colore:";
-    for(int i=0; i<=maxId; i++)
-    	cout<<"["<<path_max[i][2]<<"]";
-    cout<<endl;
-
-    cout<<"trovato="<<trovato<<endl;
-#endif 
-	
-	vector<int> path;
-	int next;
-	
-	if(trovato){
-	
-		//cout<<"nodo di inizio ciclo: "<<cicloStart<<endl;
-		//inserisco il primo nodo del ciclo
-		path.push_back(cicloStart);
-		
-		next=path_max[cicloStart][1];
-		while(next!=cicloStart){
-			path.push_back(next);
-			next=path_max[next][1];
-		}
-		
-		out<<"-1 "<<path.size()<<endl;
-		out<<path[0];
-		for(int i=1; i<path.size(); i++)
-			out<<" "<<path[i];
-	}
-	
-	else{
-		
-		int lunghezza=path_max[0][0];
-		//stampo la lunghezza del percorso massimo
-		out<<lunghezza<<endl;
-		
-		next=path_max[0][1];
-		
-		#if 0
-		while(next!=0){
-			path.push_back(next);
-			next=path_max[next][1];
-		}
-		#endif
-		
-		for(int step=0; step<lunghezza; step++){
-			path.push_back(next);
-			next=path_max[next][1];
-		}
-		
-		out<<path[0];
-		for(int i=1; i<path.size(); i++)
-			out<<" "<<path[i];
-	
-	}
-		
-	//out.close();
-
     return 0;
 }
